@@ -1,0 +1,23 @@
+{
+  "name": "pingmo",
+  "version": "1.0.0",
+  "description": "ping monitor",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shanyou/pingmo.git"
+  },
+  "author": "shanyou",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/shanyou/pingmo/issues"
+  },
+  "homepage": "https://github.com/shanyou/pingmo#readme",
+  "dependencies": {
+    "level": "^1.4.0",
+    "net-ping": "^1.1.12"
+  }
+}
