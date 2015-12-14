@@ -4,6 +4,9 @@
 var Promise = require("bluebird");
 var ping = require ("net-ping");
 var dns = Promise.promisifyAll(require('dns'));
+var PingHost = require('./lib/pinghost');
+var heapdump = require('heapdump');
+var util = require('util');
 
 var pingOption = {
     packetSize: 4,
@@ -11,72 +14,28 @@ var pingOption = {
     timeout: 1000
 };
 
-function pingAsync(address) {
-  return new Promise(function(resolve, reject){
-    console.log('new Promise ');
-    var session = ping.createSession(address, pingOption);
-    session.on ("error", function (error) {
-    	console.trace (error.toString ());
-      reject(error);
-    });
-
-    console.log('start ping ' + address);
-    var start = new Date();
-    session.pingHost (address, function (error, target) {
-      console.log('end ping');
-      var end = new Date();
-      var duration = (end.getTime() - start.getTime());
-      console.log(duration);
-      if (error)
-          reject(error);
-      else
-          resolve({ip: target, duration: duration});
-    });
-  });
-}
-
 var host = process.argv[2];
-console.log('begin ping ' + host);
-//dns.lookupAsync(host).then(pingAsync).then(function(obj){
-//  console.dir(obj);
-//}).catch(function(err){
-//  console.log(err.message);
-//});
 
-function pingping() {
-  dns.lookupAsync(host).then(function(ip){
-      var session = ping.createSession(ip, pingOption);
-      var start = process.hrtime();
-      session.pingHost (ip, function (error, target) {
-        var end = process.hrtime();
-        var endnano = end[0] * 1e9 + end[1];
-        var startnano = start[0]*1e9 + start[1];
-        if (error) {
-          console.log('timeout');
-        } else {
-          console.log((endnano - startnano)/1e6);
-        }
-        setTimeout(function () {
-            pingping();
-        }, 1000);
-      });
-  });
-}
+var pingHost = new PingHost(host, {
+    interval: 1000
+});
+pingHost.start();
+pingHost.on('start', function(res){
+    console.log("PING " + res.hostname + " (" + res.ip + ")");
+});
+pingHost.on('ping', function(res){
+    var result;
+    if (res.success) {
+        result = util.format("%s bytes from %s: icmp_seq=%s ttl=%s time=%s ms",
+            res.packetSize,
+            res.ip,
+            res.seq,
+            res.ttl,
+            (res.duration/1e6).toFixed(2)
+        );
+    } else {
+        result = util.format("Request timeout for icmp_seq %s", res.seq);
+    }
 
-pingping();
-
-function _internalPing (address, session){
-    var start = new Date();
-    session.pingHost (address, function (error, target) {
-        var end = new Date();
-        var duration = (end.getTime() - start.getTime());
-        if (error)
-            console.log (target + ": " + error.toString ());
-        else
-            console.log (target + ": Alive " + duration + "ms");
-
-        setTimeout(function () {
-            _internalPing(address, session);
-        }, 1000);
-    });
-}
+    console.log(result);
+});
